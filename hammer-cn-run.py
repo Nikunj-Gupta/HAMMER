@@ -122,7 +122,7 @@ def run(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default='configs/2021/cn/hyperparams.yaml', help="config file name")
+    parser.add_argument("--config", type=str, default='configs/cn.yaml', help="config file name")
 
     parser.add_argument("--expname", type=str, default=None)
     parser.add_argument("--envname", type=str, default='cn')
