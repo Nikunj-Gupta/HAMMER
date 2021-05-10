@@ -9,13 +9,12 @@ pip install --upgrade pip
 pip install -r requirements.txt 
 ```
 
-## Cooperative Navigation
+## Running experiments on PettingZoo Environments ---
 
 ```python
-python hammer-cn-run.py
+python hammer-run.py --envname ENV --config CONFIG 
 [-h HELP] 
-[--config CONFIG] [--expname EXPNAME] 
-[--envname ENVNAME] [--nagents NAGENTS] 
+[--expname EXPNAME] [--nagents NAGENTS] 
 [--sharedparams SHAREDPARAMS] [--maxepisodes MAXEPISODES] 
 [--partialobs PARTIALOBS] [--heterogeneity HETEROGENEITY] 
 [--limit LIMIT] [--maxcycles MAXCYCLES] 
@@ -24,6 +23,16 @@ python hammer-cn-run.py
 [--logdir LOGDIR] [--savedir SAVEDIR]
 ```
 
-## SMARTS
+### Cooperative Navigation (MPE) and MultiWalker (SISL)
+
+Use
+
+`ENV="cn"`, `CONFIG="config/cn.yaml"` for Cooperative Navigation, and
+
+`ENV="mw"`, `CONFIG="config/mw.yaml"` for MultiWalker.
+
+*Currently HAMMER supports only CN and MW, but other environments are easy to add in the code. We will upgrade the framework to flexibly switch among pettinzoo environments in the future.
+
+### SMARTS
 
 WIP
