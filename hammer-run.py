@@ -4,6 +4,7 @@ from itertools import count
 from tensorboardX import SummaryWriter
 from pathlib import Path 
 from pettingzoo.mpe import simple_spread_v2 
+from pettingzoo.sisl import multiwalker_v6 
 
 from hammer import PPO 
 
@@ -15,14 +16,23 @@ def read_config(file, head=None):
         return config[head]
     return config
 
-def run(args):
-    env = simple_spread_v2.parallel_env(N=args.nagents, local_ratio=0.5, max_cycles=args.maxcycles) 
-    env.reset()
+def run(args): 
+    if args.envname == "cn": 
+        env = simple_spread_v2.parallel_env(N=args.nagents, local_ratio=0.5, max_cycles=args.maxcycles) 
+        env.reset()
+        agents = [agent for agent in env.agents] 
+        obs_dim = env.observation_spaces[env.agents[0]].shape[0]
+        action_dim = env.action_spaces[env.agents[0]].n if args.envname == "cn" else 5 
+        agent_action_space = env.action_spaces[env.agents[0]] 
     
-    agents = [agent for agent in env.agents] 
-    obs_dim = env.observation_spaces[env.agents[0]].shape[0]
-    action_dim = env.action_spaces[env.agents[0]].n if args.envname == "cn" else 5 
-    agent_action_space = env.action_spaces[env.agents[0]]
+    elif args.envname == "mw": 
+        env = multiwalker_v6.parallel_env(n_walkers=args.nagents) 
+        env.reset()
+        agents = [agent for agent in env.agents] 
+        obs_dim = env.observation_spaces[env.agents[0]].shape[0]        
+        action_dim = env.action_spaces[env.agents[0]].shape[0] 
+        agent_action_space = env.action_spaces[env.agents[0]]
+
 
     config = read_config(args.config) 
     if not config:
@@ -36,7 +46,7 @@ def run(args):
         torch.manual_seed(random_seed)
         np.random.seed(random_seed)
 
-    expname = args.envname if args.expname == None else args.expname
+    expname = args.envname if args.expname == None else args.expname 
     
     writer = SummaryWriter(logdir=os.path.join("./save/", expname, args.logdir)) 
     # log_dir = Path('./logs/HAMMER-gradient-analysis/')
@@ -57,15 +67,15 @@ def run(args):
         single_action_dim=action_dim,
         meslen = args.meslen, 
         n_agents=len(agents), # required for discrete messages
-        lr=config["global"]["lr"],
+        lr=config["lr"],
         betas=betas,
-        gamma = config["main"]["gamma"],
-        K_epochs=config["global"]["K_epochs"],
-        eps_clip=config["main"]["eps_clip"],        
-        actor_layer=config["global"]["actor_layer"],
-        critic_layer=config["global"]["critic_layer"], 
+        gamma = config["gamma"],
+        K_epochs=config["K_epochs"],
+        eps_clip=config["eps_clip"],        
+        actor_layer=config["actor_layer"],
+        critic_layer=config["critic_layer"], 
         dru_toggle=args.dru_toggle, 
-        is_discrete=1, 
+        is_discrete=config["is_discrete"], 
         sharedparams=0
     ) 
 
@@ -86,14 +96,16 @@ def run(args):
     for timestep in count(1):
 
         action_array = [] 
-        actions, messages = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory)
-        
+        actions, messages = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory) 
+
+        if args.envname == "mw": 
+            actions = {agent : np.clip(actions[agent], agent_action_space.low, agent_action_space.high) for agent in agents}     
         next_obs, rewards, is_terminals, infos = env.step(actions) 
 
         HAMMER.memory_record(rewards, is_terminals)
         episode_rewards += list(rewards.values())[0]         
         # update if its time
-        if timestep % config["global"]["update_timestep"] == 0: 
+        if timestep % config["update_timestep"] == 0: 
             HAMMER.update()
             [mem.clear_memory() for mem in HAMMER.memory]
             HAMMER.global_memory.clear_memory()
