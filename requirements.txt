@@ -4,4 +4,6 @@ gym
 PyYaml 
 pettingzoo 
 Box2D 
-
+# box2d-kengz # for compute canada only 
+pandas # used in communication analysis 
+matplotlib # used in communication analysis 

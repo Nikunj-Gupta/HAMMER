@@ -2,3 +2,5 @@ __pycache__/
 save/ 
 makefile 
 .vscode/ 
+test/ 
+plots/ 
