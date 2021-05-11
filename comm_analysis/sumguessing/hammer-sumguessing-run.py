@@ -1,32 +1,26 @@
 import argparse, os, numpy as np, torch, json 
 
 from itertools import count
+from pettingzoo.mpe import simple_spread_v2
+from pettingzoo.mpe import simple_reference_v2
 from tensorboardX import SummaryWriter
-from pathlib import Path 
-from pettingzoo.mpe import simple_spread_v2 
-from pettingzoo.sisl import multiwalker_v6 
+from pathlib import Path
 
-from hammer import PPO 
-from utils import read_config 
+from hammer import PPO
+from utils import read_config
+from sum_guessing_game import GuessingSumEnv
 
-
-def run(args): 
-    if args.envname == "cn": 
-        env = simple_spread_v2.parallel_env(N=args.nagents, local_ratio=0.5, max_cycles=args.maxcycles) 
-        env.reset()
-        agents = [agent for agent in env.agents] 
-        obs_dim = env.observation_spaces[env.agents[0]].shape[0]
-        action_dim = env.action_spaces[env.agents[0]].n if args.envname == "cn" else 5 
-        agent_action_space = env.action_spaces[env.agents[0]] 
+def run(args):
     
-    elif args.envname == "mw": 
-        env = multiwalker_v6.parallel_env(n_walkers=args.nagents) 
-        env.reset()
-        agents = [agent for agent in env.agents] 
-        obs_dim = env.observation_spaces[env.agents[0]].shape[0]        
-        action_dim = env.action_spaces[env.agents[0]].shape[0] 
-        agent_action_space = env.action_spaces[env.agents[0]]
+    SCALE = args.scale 
+    env = GuessingSumEnv(num_agents=args.nagents, scale=SCALE, discrete=False)
 
+    env.reset()
+    agents = env.agents
+
+    obs_dim = 1 
+        
+    action_dim = 1 
 
     config = read_config(args.config) 
     if not config:
@@ -40,10 +34,20 @@ def run(args):
         torch.manual_seed(random_seed)
         np.random.seed(random_seed)
 
-    expname = args.envname if args.expname == None else args.expname 
+
+    expname = "--".join([
+        args.envname, 
+        "nagents"+str(args.nagents), 
+        "dru"+str(args.dru_toggle), 
+        "meslen"+str(args.meslen),
+        # "update_timestep", str(config["local"]["update_timestep"]),  
+        # "lr", str(config["local"]["lr"]),  
+        # "K_epochs", str(config["local"]["K_epochs"]), 
+        "rs", str(args.randomseed), 
+    ])
     
     writer = SummaryWriter(logdir=os.path.join("./save/", expname, args.logdir)) 
-    # log_dir = Path('./logs/HAMMER-gradient-analysis/')
+    # log_dir = Path(os.path.join(args.logdir, expname))
     # for i in count(0):
     #     temp = log_dir/('run{}'.format(i)) 
     #     if temp.exists():
@@ -84,20 +88,18 @@ def run(args):
 
     obs = env.reset() 
 
-    i_episode = 0
+    i_episode = -1
     episode_rewards = 0
-
+    ep_rew = []
     for timestep in count(1):
 
         action_array = [] 
         actions, messages = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory) 
-
-        if args.envname == "mw": 
-            actions = {agent : np.clip(actions[agent], agent_action_space.low, agent_action_space.high) for agent in agents}     
         next_obs, rewards, is_terminals, infos = env.step(actions) 
 
-        HAMMER.memory_record(rewards, is_terminals)
-        episode_rewards += list(rewards.values())[0]         
+        HAMMER.memory_record(rewards, is_terminals) 
+        episode_rewards += np.mean(list(rewards.values())) 
+        ep_rew.append(episode_rewards) 
         # update if its time
         if timestep % config["update_timestep"] == 0: 
             HAMMER.update()
@@ -123,34 +125,30 @@ def run(args):
             HAMMER.save(save_dir) 
 
         if i_episode == args.maxepisodes:
-            break
+            break 
+    print(np.mean(ep_rew))
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default='configs/cn.yaml', help="config file name")
+    parser.add_argument("--config", type=str, default='configs/sumguessing.yaml', help="config file name")
 
     parser.add_argument("--expname", type=str, default=None)
-    parser.add_argument("--envname", type=str, default='cn')
-    parser.add_argument("--nagents", type=int, default=3) 
+    parser.add_argument("--envname", type=str, default='guesser')
+    parser.add_argument("--nagents", type=int, default=3)
+    parser.add_argument("--scale", type=float, default=10.0) 
 
-    parser.add_argument("--sharedparams", type=int, default=1) 
+    parser.add_argument("--maxepisodes", type=int, default=50_000) 
 
-    parser.add_argument("--maxepisodes", type=int, default=500_000) 
+    parser.add_argument("--dru_toggle", type=int, default=0) 
+    parser.add_argument("--sharedparams", type=int, default=0) 
 
-    parser.add_argument("--partialobs", type=int, default=0) 
-    parser.add_argument("--heterogeneity", type=int, default=0) 
-    parser.add_argument("--limit", type=int, default=10) # 11 for sr, 10 for cn
-    parser.add_argument("--maxcycles", type=int, default=25) 
-
-    parser.add_argument("--dru_toggle", type=int, default=1) 
-
-    parser.add_argument("--meslen", type=int, default=100, help="message length")
+    parser.add_argument("--meslen", type=int, default=1, help="message length")
     parser.add_argument("--randomseed", type=int, default=10)
 
-    parser.add_argument("--saveinterval", type=int, default=50) 
+    parser.add_argument("--saveinterval", type=int, default=10_000) 
     parser.add_argument("--logdir", type=str, default="logs/", help="log directory path")
-    parser.add_argument("--savedir", type=str, default="model_checkpoints/", help="save directory path")
+    parser.add_argument("--savedir", type=str, default="model_checkpoints", help="save directory path")
     
 
     args = parser.parse_args() 
