@@ -40,7 +40,16 @@ def run(args):
         torch.manual_seed(random_seed)
         np.random.seed(random_seed)
 
-    expname = args.envname if args.expname == None else args.expname 
+    name = "--".join([
+        "env_" + args.envname, 
+        "n_" + str(args.nagents), 
+        "dru_" + str(args.dru_toggle), 
+        "meslen_" + str(args.meslen), 
+        "sharedparams_" + str(args.sharedparams), 
+        "randomseed_" + str(args.randomseed) 
+    ]) 
+    
+    expname = name if args.expname == None else args.expname 
     
     writer = SummaryWriter(logdir=os.path.join("./save/", expname, args.logdir)) 
     # log_dir = Path('./logs/HAMMER-gradient-analysis/')
@@ -85,19 +94,20 @@ def run(args):
     obs = env.reset() 
 
     i_episode = 0
-    episode_rewards = 0
+    episode_rewards = 0 
+    episode_messages = [] 
 
     for timestep in count(1):
-
-        action_array = [] 
         actions, messages = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory) 
+        episode_messages.append(messages) 
 
         if args.envname == "mw": 
             actions = {agent : np.clip(actions[agent], agent_action_space.low, agent_action_space.high) for agent in agents}     
         next_obs, rewards, is_terminals, infos = env.step(actions) 
 
         HAMMER.memory_record(rewards, is_terminals)
-        episode_rewards += list(rewards.values())[0]         
+        episode_rewards += np.mean(np.array(list(rewards.values()))) 
+
         # update if its time
         if timestep % config["update_timestep"] == 0: 
             HAMMER.update()
@@ -108,11 +118,22 @@ def run(args):
 
         # If episode had ended
         if all([is_terminals[agent] for agent in agents]):
-            i_episode += 1
-            writer.add_scalar('Avg reward for each agent, after an episode', episode_rewards, i_episode)
+            i_episode += 1 
+
+            # recording episodic rewards per agent 
+            writer.add_scalar('Episodic Reward', episode_rewards, i_episode) 
+            
+            # recording mean of messages of each agent 
+            mean_mes = np.mean(np.array(episode_messages), axis=0) 
+            for agent in agents: 
+                for m in range(args.meslen): 
+                    writer.add_scalar(str(agent)+"--"+ 'message_feature_'+str(m), mean_mes[int(agent[-1])][m], i_episode) 
+                
             obs = env.reset() 
-            print('Episode {} \t  Avg reward for each agent, after an episode: {}'.format(i_episode, episode_rewards))
-            episode_rewards = 0
+            print('Episode {} \t  Episodic reward per agent: {}'.format(i_episode, episode_rewards)) 
+            episode_rewards = 0 
+            episode_messages = [] 
+
 
         # save every 50 episodes
         if i_episode % args.saveinterval == 0:
@@ -137,22 +158,18 @@ if __name__ == '__main__':
     parser.add_argument("--sharedparams", type=int, default=1) 
 
     parser.add_argument("--maxepisodes", type=int, default=500_000) 
-
-    parser.add_argument("--partialobs", type=int, default=0) 
-    parser.add_argument("--heterogeneity", type=int, default=0) 
-    parser.add_argument("--limit", type=int, default=10) # 11 for sr, 10 for cn
     parser.add_argument("--maxcycles", type=int, default=25) 
 
-    parser.add_argument("--dru_toggle", type=int, default=1) 
+    parser.add_argument("--dru_toggle", type=int, default=1) # 0 for HAMMERv2 and 1 for HAMMERv3 
 
-    parser.add_argument("--meslen", type=int, default=100, help="message length")
-    parser.add_argument("--randomseed", type=int, default=10)
+    parser.add_argument("--meslen", type=int, default=1, help="message length")
+    parser.add_argument("--randomseed", type=int, default=9)
 
-    parser.add_argument("--saveinterval", type=int, default=50) 
+    parser.add_argument("--saveinterval", type=int, default=50_000) 
     parser.add_argument("--logdir", type=str, default="logs/", help="log directory path")
     parser.add_argument("--savedir", type=str, default="model_checkpoints/", help="save directory path")
     
 
     args = parser.parse_args() 
     print(args.savedir)
-    run(args=args)
+    run(args=args) 
