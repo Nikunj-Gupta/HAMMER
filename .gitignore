@@ -4,3 +4,4 @@ makefile
 .vscode/ 
 test/ 
 plots/ 
+runs/ 

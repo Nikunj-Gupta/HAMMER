@@ -1,5 +1,6 @@
 torch 
 tensorboardX 
+tensorboard 
 gym 
 PyYaml 
 pettingzoo 
