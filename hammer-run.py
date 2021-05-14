@@ -165,7 +165,7 @@ if __name__ == '__main__':
     parser.add_argument("--meslen", type=int, default=1, help="message length")
     parser.add_argument("--randomseed", type=int, default=9)
 
-    parser.add_argument("--saveinterval", type=int, default=50_000) 
+    parser.add_argument("--saveinterval", type=int, default=25_000) 
     parser.add_argument("--logdir", type=str, default="logs/", help="log directory path")
     parser.add_argument("--savedir", type=str, default="model_checkpoints/", help="save directory path")
     
