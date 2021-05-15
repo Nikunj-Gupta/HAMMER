@@ -48,6 +48,8 @@ def run(args):
         "sharedparams_" + str(args.sharedparams), 
         "randomseed_" + str(args.randomseed) 
     ]) 
+
+    name = "eval--"+args.eval_path.split("/")[-3] if args.eval else name 
     
     expname = name if args.expname == None else args.expname 
     
@@ -81,6 +83,8 @@ def run(args):
         is_discrete=config["is_discrete"], 
         sharedparams=0
     ) 
+    if args.eval: 
+        HAMMER.load(args.eval_path)
 
     if args.dru_toggle: 
         print("Using DRU") 
@@ -109,7 +113,7 @@ def run(args):
         episode_rewards += np.mean(np.array(list(rewards.values()))) 
 
         # update if its time
-        if timestep % config["update_timestep"] == 0: 
+        if (not args.eval) and (timestep % config["update_timestep"] == 0): 
             HAMMER.update()
             [mem.clear_memory() for mem in HAMMER.memory]
             HAMMER.global_memory.clear_memory()
@@ -136,7 +140,7 @@ def run(args):
 
 
         # save every 50 episodes
-        if i_episode % args.saveinterval == 0:
+        if (not args.eval) and (i_episode % args.saveinterval == 0):
             save_dir = os.path.join("./save/", expname, args.savedir, "checkpoint_ep_"+str(i_episode)) 
         
             if not os.path.exists(save_dir): 
@@ -154,6 +158,8 @@ if __name__ == '__main__':
     parser.add_argument("--expname", type=str, default=None)
     parser.add_argument("--envname", type=str, default='cn')
     parser.add_argument("--nagents", type=int, default=3) 
+    parser.add_argument("--eval", type=int, default=0) 
+    parser.add_argument("--eval_path", type=str, default="") 
 
     parser.add_argument("--sharedparams", type=int, default=1) 
 
