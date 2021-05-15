@@ -16,7 +16,7 @@ def run(args):
         env.reset()
         agents = [agent for agent in env.agents] 
         obs_dim = env.observation_spaces[env.agents[0]].shape[0]
-        action_dim = env.action_spaces[env.agents[0]].n if args.envname == "cn" else 5 
+        action_dim = env.action_spaces[env.agents[0]].n 
         agent_action_space = env.action_spaces[env.agents[0]] 
     
     elif args.envname == "mw": 
@@ -99,12 +99,10 @@ def run(args):
 
     i_episode = 0
     episode_rewards = 0 
-    episode_messages = [] 
-
+    
     for timestep in count(1):
-        actions, messages = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory) 
-        episode_messages.append(messages) 
-
+        actions, messages = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory)  
+        
         if args.envname == "mw": 
             actions = {agent : np.clip(actions[agent], agent_action_space.low, agent_action_space.high) for agent in agents}     
         next_obs, rewards, is_terminals, infos = env.step(actions) 
@@ -128,16 +126,14 @@ def run(args):
             writer.add_scalar('Episodic Reward', episode_rewards, i_episode) 
             
             # recording mean of messages of each agent 
-            mean_mes = np.mean(np.array(episode_messages), axis=0) 
-            for agent in agents: 
+            for i, agent in enumerate(agents): 
                 for m in range(args.meslen): 
-                    writer.add_scalar(str(agent)+"--"+ 'message_feature_'+str(m), mean_mes[int(agent[-1])][m], i_episode) 
-                
+                    writer.add_scalar(str(agent)+"--"+ 'message_feature_'+str(m), np.mean(np.array(HAMMER.memory[i].messages).reshape((-1))), i_episode) 
+
+            [mem.clear_messages() for mem in HAMMER.memory] 
             obs = env.reset() 
             print('Episode {} \t  Episodic reward per agent: {}'.format(i_episode, episode_rewards)) 
             episode_rewards = 0 
-            episode_messages = [] 
-
 
         # save every 50 episodes
         if (not args.eval) and (i_episode % args.saveinterval == 0):
@@ -147,7 +143,14 @@ def run(args):
                 os.makedirs(os.path.join(save_dir))  
             HAMMER.save(save_dir) 
 
-        if i_episode == args.maxepisodes:
+        if i_episode == args.maxepisodes: 
+            if args.eval: 
+                if not os.path.exists(os.path.join("./save/", expname, "data")):
+                    os.makedirs(os.path.join("./save/", expname, "data"))
+                for i, agent in enumerate(agents): 
+                    np.save(os.path.join("./save/", expname, "data", "states_"+agent+".npy"), HAMMER.memory[i].states) 
+                    np.save(os.path.join("./save/", expname, "data", "actions_"+agent+".npy"), HAMMER.memory[i].actions) 
+                    np.save(os.path.join("./save/", expname, "data", "messages_"+agent+".npy"), HAMMER.memory[i].messages) 
             break
 
 if __name__ == '__main__':
@@ -163,7 +166,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--sharedparams", type=int, default=1) 
 
-    parser.add_argument("--maxepisodes", type=int, default=500_000) 
+    parser.add_argument("--maxepisodes", type=int, default=100) 
     parser.add_argument("--maxcycles", type=int, default=25) 
 
     parser.add_argument("--dru_toggle", type=int, default=1) # 0 for HAMMERv2 and 1 for HAMMERv3 

@@ -18,7 +18,8 @@ class Memory:
         self.states = []
         self.logprobs = []
         self.rewards = []
-        self.is_terminals = []
+        self.is_terminals = [] 
+        self.messages = [] 
 
     def clear_memory(self):
         del self.actions[:]
@@ -27,6 +28,8 @@ class Memory:
         del self.rewards[:]
         del self.is_terminals[:]
 
+    def clear_messages(self):
+        del self.messages[:] 
 
 class ActorCritic(nn.Module):
     def __init__(self, single_state_dim, single_action_dim, n_agents, actor_layer, \
@@ -124,6 +127,7 @@ class ActorCritic(nn.Module):
                 memory[i].states.append(state)
                 memory[i].actions.append(action)
                 memory[i].logprobs.append(dist.log_prob(action))
+                memory[i].messages.append(global_actor_message[i].reshape(-1).detach().numpy())
 
             return {agent : action_array[i] for i, agent in enumerate(self.agents)}, [np.array(mes.detach()[0]) for mes in global_actor_message] 
         else: 
@@ -145,6 +149,7 @@ class ActorCritic(nn.Module):
                 memory[i].states.append(state)
                 memory[i].actions.append(action)
                 memory[i].logprobs.append(action_logprob) 
+                memory[i].messages.append(global_actor_message[i].reshape(-1).detach().numpy())
 
             return {agent : action_array[i] for i, agent in enumerate(self.agents)}, [np.array(mes.detach()[0]) for mes in global_actor_message]  
 
@@ -246,6 +251,7 @@ class PPO:
         for i, agent in enumerate(self.agents):
             self.memory[i].rewards.append(rewards[agent])
             self.memory[i].is_terminals.append(is_terminals[agent])
+            # self.memory[i].messages.append(messages[i]) 
 
     def update(self, writer=None, i_episode=None):
         rewards_list = []
