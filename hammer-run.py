@@ -11,13 +11,34 @@ from npy_append_array import NpyAppendArray
 from hammer import PPO 
 from utils import read_config 
 
+def preprocess_one_obs(obs, which=1, limit=10): 
+    agent = "agent_" + str(which) 
+    obs[agent][limit:] = [0.]*(len(obs["agent_0"])-(limit)) 
+    return obs 
+
+def preprocess_obs(obs, limit): 
+    for i in obs: 
+        obs[i] = obs[i][:limit] 
+    return obs 
 
 def run(args): 
+    if args.partialobs: 
+        print("Using Partial Observations") 
+    
+    if args.heterogeneity: 
+        print("Using Heterogeneous Local Agents") 
+
     if args.envname == "cn": 
         env = simple_spread_v2.parallel_env(N=args.nagents, local_ratio=0.5, max_cycles=args.maxcycles) 
         env.reset()
         agents = [agent for agent in env.agents] 
-        obs_dim = env.observation_spaces[env.agents[0]].shape[0]
+        if args.heterogeneity: 
+            obs_dim = len(preprocess_one_obs(env.reset(), limit=args.limit)["agent_0"]) 
+        elif args.partialobs:
+            obs_dim = len(preprocess_obs(env.reset(), limit=args.limit)["agent_0"]) 
+        else:
+            obs_dim = env.observation_spaces[env.agents[0]].shape[0]
+
         action_dim = env.action_spaces[env.agents[0]].n 
         agent_action_space = env.action_spaces[env.agents[0]] 
     
@@ -44,6 +65,8 @@ def run(args):
 
     name = "--".join([
         "env_" + args.envname, 
+        "partialobs_" + str(args.partialobs), 
+        "heterogeneity_" + str(args.heterogeneity), 
         "n_" + str(args.nagents), 
         "dru_" + str(args.dru_toggle), 
         "meslen_" + str(args.meslen), 
@@ -94,10 +117,13 @@ def run(args):
         print("Not Using DRU")
 
     # logging variables
-    ep_reward = 0
-    global_timestep = 0
 
-    obs = env.reset() 
+    if args.heterogeneity: 
+        obs = preprocess_one_obs(env.reset(), limit=args.limit) 
+    elif args.partialobs: 
+        obs = preprocess_obs(env.reset(), limit=args.limit)
+    else:  
+        obs = env.reset() 
 
     i_episode = 1 
     episode_rewards = 0 
@@ -114,10 +140,14 @@ def run(args):
 
         # update if its time
         if (not args.eval) and (timestep % config["update_timestep"] == 0): 
-            HAMMER.update()
+            HAMMER.update() 
             [mem.clear_memory() for mem in HAMMER.memory]
             HAMMER.global_memory.clear_memory() 
-        
+
+        if args.partialobs: 
+            next_obs = preprocess_obs(next_obs, limit=args.limit) 
+        elif args.heterogeneity: 
+            next_obs = preprocess_one_obs(next_obs, limit=args.limit) 
         obs = next_obs
 
         # If episode had ended
@@ -158,7 +188,12 @@ def run(args):
                         os.makedirs(os.path.join(save_dir))  
                     HAMMER.save(save_dir) 
 
-            obs = env.reset() 
+            if args.heterogeneity: 
+                obs = preprocess_one_obs(env.reset(), limit=args.limit) 
+            elif args.partialobs: 
+                obs = preprocess_obs(env.reset(), limit=args.limit)
+            else: 
+                obs = env.reset() 
             print('Episode {} \t  Episodic reward per agent: {}'.format(i_episode, episode_rewards)) 
             episode_rewards = 0 
             i_episode += 1 
@@ -182,6 +217,9 @@ if __name__ == '__main__':
 
     parser.add_argument("--maxepisodes", type=int, default=10_000) 
     parser.add_argument("--maxcycles", type=int, default=25) 
+    parser.add_argument("--partialobs", type=int, default=0) 
+    parser.add_argument("--heterogeneity", type=int, default=0) 
+    parser.add_argument("--limit", type=int, default=10) # 10 for cn
 
     parser.add_argument("--dru_toggle", type=int, default=1) # 0 for HAMMERv2 and 1 for HAMMERv3 
 
