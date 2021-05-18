@@ -1,10 +1,12 @@
-import argparse, os, numpy as np, torch, json 
+import argparse, os, numpy as np, torch, json
+from numpy.lib.function_base import hamming 
 
 from itertools import count
 from tensorboardX import SummaryWriter
 from pathlib import Path 
 from pettingzoo.mpe import simple_spread_v2 
 from pettingzoo.sisl import multiwalker_v6 
+from npy_append_array import NpyAppendArray
 
 from hammer import PPO 
 from utils import read_config 
@@ -97,7 +99,7 @@ def run(args):
 
     obs = env.reset() 
 
-    i_episode = 0
+    i_episode = 1 
     episode_rewards = 0 
     
     for timestep in count(1):
@@ -114,13 +116,12 @@ def run(args):
         if (not args.eval) and (timestep % config["update_timestep"] == 0): 
             HAMMER.update()
             [mem.clear_memory() for mem in HAMMER.memory]
-            HAMMER.global_memory.clear_memory()
-
+            HAMMER.global_memory.clear_memory() 
+        
         obs = next_obs
 
         # If episode had ended
         if all([is_terminals[agent] for agent in agents]):
-            i_episode += 1 
 
             # recording episodic rewards per agent 
             writer.add_scalar('Episodic Reward', episode_rewards, i_episode) 
@@ -130,27 +131,40 @@ def run(args):
                 for m in range(args.meslen): 
                     writer.add_scalar(str(agent)+"--"+ 'message_feature_'+str(m), np.mean(np.array(HAMMER.memory[i].messages).reshape((-1))), i_episode) 
 
-            [mem.clear_messages() for mem in HAMMER.memory] 
+            # save model periodically 
+            if i_episode % args.saveinterval == 0: 
+                if args.eval: 
+                    where = os.path.join("./save/", expname, "dataset") 
+                    if not os.path.exists(where):
+                        os.makedirs(where)
+                    filenames= {
+                        "hammer_states": os.path.join(where, "hammer_states.npy"), 
+                        "hammer_messages": os.path.join(where, "hammer_messages.npy"), 
+                    } 
+
+                    npaa = NpyAppendArray(filenames["hammer_messages"]) 
+                    [npaa.append(np.array(x).reshape(1, -1)) for x in HAMMER.global_memory.messages] 
+
+                    npaa = NpyAppendArray(filenames["hammer_states"]) 
+                    [npaa.append(i.detach().numpy()) for i in HAMMER.global_memory.states] 
+
+                    [mem.clear_memory() for mem in HAMMER.memory]
+                    HAMMER.global_memory.clear_memory() 
+
+                else: 
+                    save_dir = os.path.join("./save/", expname, args.savedir, "checkpoint_ep_"+str(i_episode)) 
+                
+                    if not os.path.exists(save_dir): 
+                        os.makedirs(os.path.join(save_dir))  
+                    HAMMER.save(save_dir) 
+
             obs = env.reset() 
             print('Episode {} \t  Episodic reward per agent: {}'.format(i_episode, episode_rewards)) 
             episode_rewards = 0 
+            i_episode += 1 
 
-        # save every 50 episodes
-        if (not args.eval) and (i_episode % args.saveinterval == 0):
-            save_dir = os.path.join("./save/", expname, args.savedir, "checkpoint_ep_"+str(i_episode)) 
-        
-            if not os.path.exists(save_dir): 
-                os.makedirs(os.path.join(save_dir))  
-            HAMMER.save(save_dir) 
 
-        if i_episode == args.maxepisodes: 
-            if args.eval: 
-                if not os.path.exists(os.path.join("./save/", expname, "data")):
-                    os.makedirs(os.path.join("./save/", expname, "data"))
-                for i, agent in enumerate(agents): 
-                    np.save(os.path.join("./save/", expname, "data", "states_"+agent+".npy"), HAMMER.memory[i].states) 
-                    np.save(os.path.join("./save/", expname, "data", "actions_"+agent+".npy"), HAMMER.memory[i].actions) 
-                    np.save(os.path.join("./save/", expname, "data", "messages_"+agent+".npy"), HAMMER.memory[i].messages) 
+        if i_episode == args.maxepisodes+1: 
             break
 
 if __name__ == '__main__':
@@ -166,7 +180,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--sharedparams", type=int, default=1) 
 
-    parser.add_argument("--maxepisodes", type=int, default=100) 
+    parser.add_argument("--maxepisodes", type=int, default=10_000) 
     parser.add_argument("--maxcycles", type=int, default=25) 
 
     parser.add_argument("--dru_toggle", type=int, default=1) # 0 for HAMMERv2 and 1 for HAMMERv3 
@@ -174,7 +188,7 @@ if __name__ == '__main__':
     parser.add_argument("--meslen", type=int, default=1, help="message length")
     parser.add_argument("--randomseed", type=int, default=9)
 
-    parser.add_argument("--saveinterval", type=int, default=25_000) 
+    parser.add_argument("--saveinterval", type=int, default=500) 
     parser.add_argument("--logdir", type=str, default="logs/", help="log directory path")
     parser.add_argument("--savedir", type=str, default="model_checkpoints/", help="save directory path")
     
