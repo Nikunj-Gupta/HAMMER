@@ -215,7 +215,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--sharedparams", type=int, default=1) 
 
-    parser.add_argument("--maxepisodes", type=int, default=10_000) 
+    parser.add_argument("--maxepisodes", type=int, default=500_000) 
     parser.add_argument("--maxcycles", type=int, default=25) 
     parser.add_argument("--partialobs", type=int, default=0) 
     parser.add_argument("--heterogeneity", type=int, default=0) 
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     parser.add_argument("--meslen", type=int, default=1, help="message length")
     parser.add_argument("--randomseed", type=int, default=9)
 
-    parser.add_argument("--saveinterval", type=int, default=500) 
+    parser.add_argument("--saveinterval", type=int, default=10_000) 
     parser.add_argument("--logdir", type=str, default="logs/", help="log directory path")
     parser.add_argument("--savedir", type=str, default="model_checkpoints/", help="save directory path")
     
