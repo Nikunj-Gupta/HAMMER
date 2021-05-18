@@ -32,8 +32,8 @@ if __name__ == '__main__':
     parser.add_argument("--train", type=int, default=1) 
     parser.add_argument("--save", type=int, default=1) 
     parser.add_argument("--load", type=int, default=1) 
-    parser.add_argument("--epochs", type=int, default=10) 
-    parser.add_argument("--batch_size", type=int, default=32) 
+    parser.add_argument("--epochs", type=int, default=50_000) 
+    parser.add_argument("--batch_size", type=int, default=512) 
 
     args = parser.parse_args() 
 
