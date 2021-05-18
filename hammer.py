@@ -27,9 +27,7 @@ class Memory:
         del self.logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
-
-    def clear_messages(self):
-        del self.messages[:] 
+        del self.messages[:]
 
 class ActorCritic(nn.Module):
     def __init__(self, single_state_dim, single_action_dim, n_agents, actor_layer, \
@@ -109,6 +107,9 @@ class ActorCritic(nn.Module):
         
         # Calculating messages
         global_actor_message = self.global_actor(global_agent_state) 
+
+        # Saving global messages
+        global_memory.messages.append([np.array(mes.detach()[0]) for mes in global_actor_message])
 
         if self.is_discrete: 
             action_array = []
