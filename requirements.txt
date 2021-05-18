@@ -9,3 +9,5 @@ Box2D
 pandas # used in communication analysis 
 matplotlib # used in communication analysis 
 scikit-learn # used in communication analysis 
+npy-append-array 
+
