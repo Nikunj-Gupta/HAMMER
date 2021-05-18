@@ -1,4 +1,4 @@
-import torch, torch.nn as nn, torch.nn.functional as F, torch.optim as optim, numpy as np 
+import torch, torch.nn as nn, torch.nn.functional as F, torch.optim as optim, numpy as np, argparse, os 
 device = torch.device("cpu")
 
 class InverseModel(nn.Module):
@@ -27,33 +27,77 @@ class InverseModel(nn.Module):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser() 
+    parser.add_argument("--filepath", type=str) 
+    parser.add_argument("--train", type=int, default=1) 
+    parser.add_argument("--save", type=int, default=1) 
+    parser.add_argument("--load", type=int, default=1) 
+    parser.add_argument("--epochs", type=int, default=10) 
+    parser.add_argument("--batch_size", type=int, default=32) 
 
-    model = InverseModel(in_dim=1, hidden_layers=[64, 64], out_dim=54)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3) 
+    args = parser.parse_args() 
+
+    where = args.filepath + "/inverse" 
+    if not os.path.exists(where): os.makedirs(where) 
+
 
     """ 
     X = (import messages)
     Y = (import actual observations)
     """
+    X = np.load(os.path.join(args.filepath, "hammer_messages.npy"), mmap_mode="r") 
+    X = np.array([i.reshape(1, -1) for i in X]) 
+    X = torch.from_numpy(X) 
 
-    X = torch.rand(500, 1, 1) 
-    Y = torch.rand(500, 1, 54)
+    Y = np.load(os.path.join(args.filepath, "hammer_states.npy"), mmap_mode="r") 
+    Y = np.array([i.reshape(1, -1) for i in Y]) 
+    Y = torch.from_numpy(Y) 
 
-    n_epochs = 10
-    batch_size = 32
+    model = InverseModel(in_dim=X.shape[-1], hidden_layers=[64, 64], out_dim=Y.shape[-1])
 
-    for epoch in range(n_epochs):
-        permutation = torch.randperm(X.size()[0])
+    n_epochs = args.epochs 
+    batch_size = args.batch_size 
 
-        for i in range(0, X.size()[0], batch_size):
-            optimizer.zero_grad()
+    bar = int((90/100) * X.shape[0])  # training and testing set 
+    print(bar)
 
-            indices = permutation[i:i+batch_size]
-            batch_x, batch_y = X[indices], Y[indices]
+    if args.train: 
+        X_train = X[:bar] 
+        Y_train = Y[:bar] 
+        print("X:", X_train.shape) 
+        print("Y: ", Y_train.shape)     
 
-            outputs = model.forward(batch_x)
-            loss = F.mse_loss(outputs, batch_y)
+        optimizer = optim.Adam(model.parameters(), lr=1e-3) 
 
-            loss.backward()
-            optimizer.step() 
-            
+        for epoch in range(n_epochs):
+            losses = []
+            permutation = torch.randperm(X_train.size()[0])
+
+            for i in range(0, X_train.size()[0], batch_size):
+                optimizer.zero_grad()
+
+                indices = permutation[i:i+batch_size]
+                batch_x, batch_y = X_train[indices], Y_train[indices]
+
+                outputs = model.forward(batch_x)
+                loss = F.mse_loss(outputs, batch_y) 
+                losses.append(loss.detach().item()) 
+
+                loss.backward()
+                optimizer.step() 
+            print("Epoch: ", epoch, " Mean Loss: ", np.mean(losses)) 
+    
+        if args.save: 
+            torch.save(model.state_dict(), os.path.join(where, "inverse_model.dict")) 
+
+    if args.load: 
+        model.load_state_dict(torch.load(os.path.join(where, "inverse_model.dict"))) 
+        model.eval() 
+        X_test = X[bar:] 
+        Y_test = Y[bar:] 
+        print("X:", X_test.shape) 
+        print("Y: ", Y_test.shape)     
+
+        outputs = model.forward(X_test) 
+        loss = F.mse_loss(outputs, Y_test) 
+        print("Test Mean Loss: ", loss.detach().item()) 
