@@ -33,7 +33,7 @@ Use
 
 *Currently HAMMER supports only CN and MW, but other environments are easy to add in the code. We will upgrade the framework to flexibly switch among pettinzoo environments in the future.
 
-### SMARTS
+## SMARTS
 
 Setup:
 
@@ -86,3 +86,15 @@ pip install -e .[test]
 make sanity-test
 ```
 
+### Building a scenario in SMARTS:
+
+1. open *supervisord.conf* and edit line no. 3
+
+For example, to open a sceanario consisting of 4 lanes: 
+> command=python examples/single_agent.py scenarios/intersections/4lane
+
+2. building the newly changed scenario, replace the last path by the path of scenario you want to configure:
+> scl scenario build --clean scenarios/intersections/4lane
+
+3. simualation and visualization:
+>  supervisord
