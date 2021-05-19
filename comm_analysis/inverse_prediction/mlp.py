@@ -53,7 +53,8 @@ if __name__ == '__main__':
     Y = np.array([i.reshape(1, -1) for i in Y]) 
     Y = torch.from_numpy(Y) 
 
-    model = InverseModel(in_dim=X.shape[-1], hidden_layers=[64, 64], out_dim=Y.shape[-1])
+    model = InverseModel(in_dim=X.shape[-1], hidden_layers=[64, 128, 256, 128], out_dim=Y.shape[-1])
+    model = InverseModel(in_dim=X.shape[-1], hidden_layers=[64, 256, 512, 1024, 512, 256], out_dim=Y.shape[-1])
 
     n_epochs = args.epochs 
     batch_size = args.batch_size 
