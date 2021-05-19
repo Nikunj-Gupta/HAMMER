@@ -120,6 +120,7 @@ def run(args):
                 plt.savefig(os.path.join(where, name+".png")) 
                 # plt.show() 
                 plt.close() 
+                print(name+" done!") 
         
 
 if __name__ == '__main__':
