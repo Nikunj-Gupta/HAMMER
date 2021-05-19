@@ -35,4 +35,54 @@ Use
 
 ### SMARTS
 
-WIP
+Setup:
+
+```bash
+git clone https://github.com/huawei-noah/SMARTS.git
+cd SMARTS
+```
+Follow the instructions given by prompt for setting up the SUMO_HOME environment variable
+```bash
+./install_deps.sh
+```
+enter to your bashrc file and add SUMO_HOME to the end of the file
+```
+nano .bashrc
+export SUMO_HOME=/usr/share/sumo/
+```
+
+verify sumo is >= 1.5.0
+
+if you have issues see ./doc/SUMO_TROUBLESHOOTING.md
+```
+sumo
+```
+
+setup virtual environment; presently only Python 3.7.x is officially supported
+```bash
+python3.7 -m venv .venv
+```
+
+enter virtual environment to install all dependencies
+```bash
+source .venv/bin/activate
+```
+
+upgrade pip, a recent version of pip is needed for the version of tensorflow we depend on
+```bash
+pip install --upgrade pip
+```
+
+install [train] version of python package with the rllib dependencies
+```bash
+pip install -e .[train]
+```
+
+make sure you can run sanity-test (and verify they are passing)
+
+if tests fail, check './sanity_test_result.xml' for test report. 
+```bash
+pip install -e .[test]
+make sanity-test
+```
+
