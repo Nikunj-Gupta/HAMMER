@@ -87,9 +87,13 @@ def run(args):
 
     where = "plots/cn"+"/wiggle_plots" 
     if not os.path.exists(where): os.makedirs(where) 
+
+    limit=18 
+    if args.partialobs: 
+        limit=10 
     
     for agent in agents: 
-        for i in range(0, 18, 2): 
+        for i in range(0, limit, 2): 
             for message_index in range(3): 
                 W1 = i 
                 W2 = i+1 
@@ -97,14 +101,14 @@ def run(args):
                 y = [] 
                 z = [] 
 
-                for _ in range(10000):
+                for _ in range(100):
                     obs[agent][W1] = np.random.uniform(-2, 2)
                     obs[agent][W2] = np.random.uniform(-2, 2)
 
                     actions, messages = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory)  
                     
-                    x.append(HAMMER.global_memory.states[0][0, (18*int(agent[-1]))+W1])
-                    y.append(HAMMER.global_memory.states[0][0, (18*int(agent[-1]))+W2])
+                    x.append(HAMMER.global_memory.states[0][0, (limit*int(agent[-1]))+W1])
+                    y.append(HAMMER.global_memory.states[0][0, (limit*int(agent[-1]))+W2])
                     # message_index = 0 
                     z.append(HAMMER.global_memory.messages[0][message_index][0])
                     HAMMER.global_memory.clear_memory()
