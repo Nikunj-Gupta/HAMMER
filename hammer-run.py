@@ -74,7 +74,7 @@ def run(args):
         "randomseed_" + str(args.randomseed) 
     ]) 
 
-    name = "eval--"+args.eval_path.split("/")[-3] if args.eval else name 
+    name = "exp"
     
     expname = name if args.expname == None else args.expname 
     
@@ -128,6 +128,8 @@ def run(args):
     i_episode = 1 
     episode_rewards = 0 
     
+    NUMPY_SAVE_FILE = []
+
     for timestep in count(1):
         actions, messages, local_state = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory) 
         
@@ -149,6 +151,10 @@ def run(args):
         elif args.heterogeneity: 
             next_obs = preprocess_one_obs(next_obs, limit=args.limit) 
         obs = next_obs
+
+        grad_values = local_state.grad.numpy()
+        local_state_values = local_state.detach().numpy()
+        NUMPY_SAVE_FILE.append(np.array([grad_values, local_state_values]))
 
         # If episode had ended
         if all([is_terminals[agent] for agent in agents]):
@@ -179,7 +185,7 @@ def run(args):
                     # npaa = NpyAppendArray(filenames["hammer_states"]) 
                     # [npaa.append(i.detach().numpy()) for i in HAMMER.global_memory.states] 
 
-                    # np.save(filenames["local_states"], np.array([local_state.grad.numpy(), local_state.detach().numpy]))
+                    np.save(filenames["local_states"], NUMPY_SAVE_FILE)
 
                     [mem.clear_memory() for mem in HAMMER.memory]
                     HAMMER.global_memory.clear_memory() 
@@ -213,8 +219,8 @@ if __name__ == '__main__':
     parser.add_argument("--expname", type=str, default=None)
     parser.add_argument("--envname", type=str, default='cn')
     parser.add_argument("--nagents", type=int, default=3) 
-    parser.add_argument("--eval", type=int, default=0) 
-    parser.add_argument("--eval_path", type=str, default="") 
+    parser.add_argument("--eval", type=int, default=1) 
+    parser.add_argument("--eval_path", type=str, default="./env_cn--n_3--dru_0--meslen_1--sharedparams_1--randomseed_9\env_cn--n_3--dru_0--meslen_1--sharedparams_1--randomseed_9\model_checkpoints\checkpoint_ep_500000") 
 
     parser.add_argument("--sharedparams", type=int, default=1) 
 
@@ -224,7 +230,7 @@ if __name__ == '__main__':
     parser.add_argument("--heterogeneity", type=int, default=0) 
     parser.add_argument("--limit", type=int, default=10) # 10 for cn
 
-    parser.add_argument("--dru_toggle", type=int, default=1) # 0 for HAMMERv2 and 1 for HAMMERv3 
+    parser.add_argument("--dru_toggle", type=int, default=0) # 0 for HAMMERv2 and 1 for HAMMERv3 
 
     parser.add_argument("--meslen", type=int, default=1, help="message length")
     parser.add_argument("--randomseed", type=int, default=9)
