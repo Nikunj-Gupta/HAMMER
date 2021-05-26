@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument("--train", type=int, default=1) 
     parser.add_argument("--save", type=int, default=1) 
     parser.add_argument("--load", type=int, default=1) 
-    parser.add_argument("--epochs", type=int, default=50_000) 
+    parser.add_argument("--epochs", type=int, default=100) 
     parser.add_argument("--batch_size", type=int, default=512) 
 
     args = parser.parse_args() 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     Y = np.array([i.reshape(1, -1) for i in Y]) 
     Y = torch.from_numpy(Y) 
 
-    model = VAE(in_dim=X.shape[-1], hidden_layers=[64, 64, 3, 64, 64], out_dim=Y.shape[-1]) # For VAE 
+    model = VAE(in_dim=X.shape[-1], hidden_layers=[64, 64, 1, 64, 64], out_dim=Y.shape[-1]) # For VAE 
 
     n_epochs = args.epochs 
     batch_size = args.batch_size 

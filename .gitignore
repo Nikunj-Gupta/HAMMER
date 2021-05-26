@@ -6,4 +6,5 @@ test/
 plots/ 
 runs/ 
 saves/ 
-*.sh 
+*.sh
+analysis-by-rendering/
