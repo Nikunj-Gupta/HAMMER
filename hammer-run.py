@@ -129,7 +129,7 @@ def run(args):
     episode_rewards = 0 
     
     for timestep in count(1):
-        actions, messages = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory)  
+        actions, messages, local_state = HAMMER.policy_old.act(obs, HAMMER.memory, HAMMER.global_memory) 
         
         if args.envname == "mw": 
             actions = {agent : np.clip(actions[agent], agent_action_space.low, agent_action_space.high) for agent in agents}     
@@ -164,19 +164,22 @@ def run(args):
             # save model periodically 
             if i_episode % args.saveinterval == 0: 
                 if args.eval: 
-                    where = os.path.join("./save/", expname, "dataset") 
+                    where = os.path.join("./save/dataset") 
                     if not os.path.exists(where):
                         os.makedirs(where)
                     filenames= {
-                        "hammer_states": os.path.join(where, "hammer_states.npy"), 
-                        "hammer_messages": os.path.join(where, "hammer_messages.npy"), 
+                        # "hammer_states": os.path.join(where, "hammer_states.npy"), 
+                        # "hammer_messages": os.path.join(where, "hammer_messages.npy"), 
+                        "local_states": os.path.join(where, "local_states.npy")
                     } 
 
-                    npaa = NpyAppendArray(filenames["hammer_messages"]) 
-                    [npaa.append(np.array(x).reshape(1, -1)) for x in HAMMER.global_memory.messages] 
+                    # npaa = NpyAppendArray(filenames["hammer_messages"]) 
+                    # [npaa.append(np.array(x).reshape(1, -1)) for x in HAMMER.global_memory.messages] 
 
-                    npaa = NpyAppendArray(filenames["hammer_states"]) 
-                    [npaa.append(i.detach().numpy()) for i in HAMMER.global_memory.states] 
+                    # npaa = NpyAppendArray(filenames["hammer_states"]) 
+                    # [npaa.append(i.detach().numpy()) for i in HAMMER.global_memory.states] 
+
+                    # np.save(filenames["local_states"], np.array([local_state.grad.numpy(), local_state.detach().numpy]))
 
                     [mem.clear_memory() for mem in HAMMER.memory]
                     HAMMER.global_memory.clear_memory() 
@@ -215,7 +218,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--sharedparams", type=int, default=1) 
 
-    parser.add_argument("--maxepisodes", type=int, default=500_000) 
+    parser.add_argument("--maxepisodes", type=int, default=100) 
     parser.add_argument("--maxcycles", type=int, default=25) 
     parser.add_argument("--partialobs", type=int, default=0) 
     parser.add_argument("--heterogeneity", type=int, default=0) 
@@ -226,7 +229,7 @@ if __name__ == '__main__':
     parser.add_argument("--meslen", type=int, default=1, help="message length")
     parser.add_argument("--randomseed", type=int, default=9)
 
-    parser.add_argument("--saveinterval", type=int, default=10_000) 
+    parser.add_argument("--saveinterval", type=int, default=100) 
     parser.add_argument("--logdir", type=str, default="logs/", help="log directory path")
     parser.add_argument("--savedir", type=str, default="model_checkpoints/", help="save directory path")
     
