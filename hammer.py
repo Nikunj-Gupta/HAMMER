@@ -84,7 +84,7 @@ class ActorCritic(nn.Module):
 
         self.action_var = torch.full((single_action_dim,), self.action_std * self.action_std).to(device)
 
-    def global_actor(self, state): 
+    def global_actor(self, state, eval_zeros=False): 
         latent_vector = self.global_encoder(state)
         message = []
         for decoder in self.global_actor_decoder: 
@@ -93,12 +93,13 @@ class ActorCritic(nn.Module):
                 message.append(self.dru.forward(message=decoder(latent_vector), mode="R")) 
             else: 
                 message.append(decoder(latent_vector)) 
+        if eval_zeros: message = [torch.zeros(1, self.meslen)]*self.n_agents 
         return message
 
     def forward(self):
         raise NotImplementedError
 
-    def act(self, obs, memory, global_memory):
+    def act(self, obs, memory, global_memory, eval_zeros=False):
         global_agent_state = [obs[i] for i in obs]
         global_agent_state = torch.FloatTensor(global_agent_state).to(device).reshape(1, -1)
         
@@ -106,7 +107,7 @@ class ActorCritic(nn.Module):
         global_memory.states.append(global_agent_state)
         
         # Calculating messages
-        global_actor_message = self.global_actor(global_agent_state) 
+        global_actor_message = self.global_actor(global_agent_state, eval_zeros=eval_zeros) 
 
         # Saving global messages
         global_memory.messages.append([np.array(mes.detach()[0]) for mes in global_actor_message])
@@ -116,6 +117,7 @@ class ActorCritic(nn.Module):
             for i, agent in enumerate(self.agents):
                 state = torch.FloatTensor(obs[agent])
                 local_state = torch.cat((state, global_actor_message[i].reshape(-1).detach()), 0).to(device)
+                local_state.requires_grad = True
                 if self.sharedparams: 
                     action_probs = self.actor[0](local_state)
                 else: 
@@ -123,14 +125,15 @@ class ActorCritic(nn.Module):
                 dist = Categorical(action_probs)
                 action = dist.sample()
                 action_array.append(action.item())
-                
+                action_probs.sum().backward() # For evaluation (Quantifying message impact) 
+
                 # Adding to memory:
                 memory[i].states.append(state)
                 memory[i].actions.append(action)
                 memory[i].logprobs.append(dist.log_prob(action))
                 memory[i].messages.append(global_actor_message[i].reshape(-1).detach().numpy())
 
-            return {agent : action_array[i] for i, agent in enumerate(self.agents)}, [np.array(mes.detach()[0]) for mes in global_actor_message] 
+            return {agent : action_array[i] for i, agent in enumerate(self.agents)}, [np.array(mes.detach()[0]) for mes in global_actor_message], local_state
         else: 
             action_array = []
             for i, agent in enumerate(self.agents):
@@ -209,9 +212,10 @@ class PPO:
         self.sharedparams = sharedparams 
         if not self.sharedparams: 
             self.num_local_networks = self.n_agents
+        self.meslen = meslen
 
         self.policy = ActorCritic(single_state_dim, single_action_dim, n_agents, \
-            actor_layer, critic_layer, meslen, agents=self.agents, dru_toggle=dru_toggle, \
+            actor_layer, critic_layer, self.meslen, agents=self.agents, dru_toggle=dru_toggle, \
                 is_discrete=is_discrete, sharedparams=sharedparams).to(device)
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=lr, betas=betas)
         self.actor_optimizers = [torch.optim.Adam(self.policy.actor[i].parameters(), lr=lr, betas=betas) for i in range(self.num_local_networks)]
@@ -219,14 +223,13 @@ class PPO:
         self.decoder_optimizer = [torch.optim.Adam(self.policy.global_actor_decoder[i].parameters(), lr=lr, betas=betas) for i in range(self.n_agents)]
 
         self.policy_old = ActorCritic(single_state_dim, single_action_dim, n_agents, \
-            actor_layer, critic_layer, meslen=meslen, agents=self.agents, dru_toggle=dru_toggle, \
+            actor_layer, critic_layer, meslen=self.meslen, agents=self.agents, dru_toggle=dru_toggle, \
                 is_discrete=is_discrete, sharedparams=sharedparams).to(device) 
         self.policy_old.load_state_dict(self.policy.state_dict())
 
         self.MseLoss = nn.MSELoss() 
         self.single_state_dim = single_state_dim 
         self.single_action_dim = single_action_dim
-        self.meslen = meslen 
         self.is_discrete = is_discrete  
 
     def load(self, dir):
