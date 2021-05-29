@@ -74,7 +74,7 @@ def run(args):
         "randomseed_" + str(args.randomseed) 
     ]) 
 
-    name = "exp"
+    # name = "exp"
     
     expname = name if args.expname == None else args.expname 
     
@@ -170,9 +170,8 @@ def run(args):
             # save model periodically 
             if i_episode % args.saveinterval == 0: 
                 if args.eval: 
-                    where = os.path.join("./save/dataset") 
-                    if not os.path.exists(where):
-                        os.makedirs(where)
+                    where = os.path.join("./comm_analysis/saliency/") 
+                    if not os.path.exists(where): os.makedirs(where)
                     filenames= {
                         # "hammer_states": os.path.join(where, "hammer_states.npy"), 
                         # "hammer_messages": os.path.join(where, "hammer_messages.npy"), 
@@ -219,23 +218,23 @@ if __name__ == '__main__':
     parser.add_argument("--expname", type=str, default=None)
     parser.add_argument("--envname", type=str, default='cn')
     parser.add_argument("--nagents", type=int, default=3) 
-    parser.add_argument("--eval", type=int, default=1) 
-    parser.add_argument("--eval_path", type=str, default="./env_cn--n_3--dru_0--meslen_1--sharedparams_1--randomseed_9\env_cn--n_3--dru_0--meslen_1--sharedparams_1--randomseed_9\model_checkpoints\checkpoint_ep_500000") 
+    parser.add_argument("--eval", type=int) 
+    parser.add_argument("--eval_path", type=str) 
 
-    parser.add_argument("--sharedparams", type=int, default=1) 
+    parser.add_argument("--sharedparams", type=int) 
 
-    parser.add_argument("--maxepisodes", type=int, default=100) 
+    parser.add_argument("--maxepisodes", type=int, default=500_000) 
     parser.add_argument("--maxcycles", type=int, default=25) 
-    parser.add_argument("--partialobs", type=int, default=0) 
-    parser.add_argument("--heterogeneity", type=int, default=0) 
-    parser.add_argument("--limit", type=int, default=10) # 10 for cn
+    parser.add_argument("--partialobs", type=int) 
+    parser.add_argument("--heterogeneity", type=int) 
+    parser.add_argument("--limit", type=int) # 10 for cn
 
-    parser.add_argument("--dru_toggle", type=int, default=0) # 0 for HAMMERv2 and 1 for HAMMERv3 
+    parser.add_argument("--dru_toggle", type=int) # 0 for HAMMERv2 and 1 for HAMMERv3 
 
-    parser.add_argument("--meslen", type=int, default=1, help="message length")
-    parser.add_argument("--randomseed", type=int, default=9)
+    parser.add_argument("--meslen", type=int, help="message length")
+    parser.add_argument("--randomseed", type=int)
 
-    parser.add_argument("--saveinterval", type=int, default=100) 
+    parser.add_argument("--saveinterval", type=int, default=10_000) 
     parser.add_argument("--logdir", type=str, default="logs/", help="log directory path")
     parser.add_argument("--savedir", type=str, default="model_checkpoints/", help="save directory path")
     
