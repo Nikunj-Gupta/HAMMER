@@ -8,3 +8,4 @@ runs/
 saves/ 
 *.sh
 analysis-by-rendering/
+VENV/

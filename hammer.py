@@ -157,7 +157,7 @@ class ActorCritic(nn.Module):
                 memory[i].logprobs.append(action_logprob) 
                 memory[i].messages.append(global_actor_message[i].reshape(-1).detach().numpy())
 
-            return {agent : action_array[i] for i, agent in enumerate(self.agents)}, [np.array(mes.detach()[0]) for mes in global_actor_message], local_state 
+            return {agent : action_array[i] for i, agent in enumerate(self.agents)}, [np.array(mes.detach()[0]) for mes in global_actor_message], local_state
 
     def evaluate(self, state, action, i): 
         if self.is_discrete: 
