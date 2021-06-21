@@ -1,15 +1,12 @@
-# PPO implementation of the global messenger for HAMMER.
-import os
+""" 
+PPO-based HAMMER implementation. 
+""" 
+import torch, os, torch.nn as nn, numpy as np 
 
-import torch
-import torch.nn as nn
 from torch.distributions import MultivariateNormal
 from torch.distributions import Categorical
-import gym
-import numpy as np
-from tensorboardX import SummaryWriter
 from dru import DRU 
-# torch.autograd.set_detect_anomaly(True)
+
 device = torch.device("cpu") 
 
 class Memory:
@@ -84,7 +81,7 @@ class ActorCritic(nn.Module):
 
         self.action_var = torch.full((single_action_dim,), self.action_std * self.action_std).to(device)
 
-    def global_actor(self, state, eval_zeros=False): 
+    def global_actor(self, state, eval_zeros=None): 
         latent_vector = self.global_encoder(state)
         message = []
         for decoder in self.global_actor_decoder: 
@@ -93,13 +90,18 @@ class ActorCritic(nn.Module):
                 message.append(self.dru.forward(message=decoder(latent_vector), mode="R")) 
             else: 
                 message.append(decoder(latent_vector)) 
-        if eval_zeros: message = [torch.zeros(1, self.meslen)]*self.n_agents 
+        # if eval_zeros!=None: message = [torch.ones(1, self.meslen)*eval_zeros]*self.n_agents # all agents 
+        # control = 0 # agent number 
+        # control_val = eval_zeros # message value 
+        # if eval_zeros!=None: 
+        #     message[control] = torch.ones(1, self.meslen)*control_val 
+            
         return message
 
     def forward(self):
         raise NotImplementedError
 
-    def act(self, obs, memory, global_memory, eval_zeros=False):
+    def act(self, obs, memory, global_memory, eval_zeros=None): 
         global_agent_state = [obs[i] for i in obs]
         global_agent_state = torch.FloatTensor(global_agent_state).to(device).reshape(1, -1)
         
@@ -155,7 +157,7 @@ class ActorCritic(nn.Module):
                 memory[i].logprobs.append(action_logprob) 
                 memory[i].messages.append(global_actor_message[i].reshape(-1).detach().numpy())
 
-            return {agent : action_array[i] for i, agent in enumerate(self.agents)}, [np.array(mes.detach()[0]) for mes in global_actor_message]  
+            return {agent : action_array[i] for i, agent in enumerate(self.agents)}, [np.array(mes.detach()[0]) for mes in global_actor_message], local_state 
 
     def evaluate(self, state, action, i): 
         if self.is_discrete: 

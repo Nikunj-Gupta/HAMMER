@@ -5,7 +5,7 @@ from itertools import count
 from tensorboardX import SummaryWriter
 from pathlib import Path 
 from pettingzoo.mpe import simple_spread_v2 
-from pettingzoo.sisl import multiwalker_v6 
+from pettingzoo.sisl import multiwalker_v7 
 from npy_append_array import NpyAppendArray
 
 from hammer import PPO 
@@ -43,7 +43,7 @@ def run(args):
         agent_action_space = env.action_spaces[env.agents[0]] 
     
     elif args.envname == "mw": 
-        env = multiwalker_v6.parallel_env(n_walkers=args.nagents) 
+        env = multiwalker_v7.parallel_env(n_walkers=args.nagents) 
         env.reset()
         agents = [agent for agent in env.agents] 
         obs_dim = env.observation_spaces[env.agents[0]].shape[0]        
@@ -152,9 +152,9 @@ def run(args):
             next_obs = preprocess_one_obs(next_obs, limit=args.limit) 
         obs = next_obs
 
-        grad_values = local_state.grad.numpy()
-        local_state_values = local_state.detach().numpy()
-        NUMPY_SAVE_FILE.append(np.array([grad_values, local_state_values]))
+        # grad_values = local_state.grad.numpy()
+        # local_state_values = local_state.detach().numpy()
+        # NUMPY_SAVE_FILE.append(np.array([grad_values, local_state_values]))
 
         # If episode had ended
         if all([is_terminals[agent] for agent in agents]):
@@ -172,11 +172,11 @@ def run(args):
                 if args.eval: 
                     where = os.path.join("./comm_analysis/saliency/") 
                     if not os.path.exists(where): os.makedirs(where)
-                    filenames= {
-                        # "hammer_states": os.path.join(where, "hammer_states.npy"), 
-                        # "hammer_messages": os.path.join(where, "hammer_messages.npy"), 
-                        "local_states": os.path.join(where, "local_states.npy")
-                    } 
+                    # filenames= {
+                    #     # "hammer_states": os.path.join(where, "hammer_states.npy"), 
+                    #     # "hammer_messages": os.path.join(where, "hammer_messages.npy"), 
+                    #     "local_states": os.path.join(where, "local_states.npy")
+                    # } 
 
                     # npaa = NpyAppendArray(filenames["hammer_messages"]) 
                     # [npaa.append(np.array(x).reshape(1, -1)) for x in HAMMER.global_memory.messages] 
@@ -184,7 +184,7 @@ def run(args):
                     # npaa = NpyAppendArray(filenames["hammer_states"]) 
                     # [npaa.append(i.detach().numpy()) for i in HAMMER.global_memory.states] 
 
-                    np.save(filenames["local_states"], NUMPY_SAVE_FILE)
+                    # np.save(filenames["local_states"], NUMPY_SAVE_FILE)
 
                     [mem.clear_memory() for mem in HAMMER.memory]
                     HAMMER.global_memory.clear_memory() 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
     parser.add_argument("--eval", type=int) 
     parser.add_argument("--eval_path", type=str) 
 
-    parser.add_argument("--sharedparams", type=int) 
+    parser.add_argument("--sharedparams", type=int, default=1) 
 
     parser.add_argument("--maxepisodes", type=int, default=500_000) 
     parser.add_argument("--maxcycles", type=int, default=25) 
