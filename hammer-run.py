@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--dru_toggle", type=int) # 0 for HAMMERv2 and 1 for HAMMERv3 
 
-    parser.add_argument("--meslen", type=int, help="message length")
+    parser.add_argument("--meslen", type=int, help="message length", default=1)
     parser.add_argument("--randomseed", type=int)
 
     parser.add_argument("--saveinterval", type=int, default=10_000) 
