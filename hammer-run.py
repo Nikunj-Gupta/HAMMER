@@ -5,7 +5,7 @@ from itertools import count
 from tensorboardX import SummaryWriter
 from pathlib import Path 
 from pettingzoo.mpe import simple_spread_v2 
-from pettingzoo.sisl import multiwalker_v6 
+from pettingzoo.sisl import multiwalker_v7
 from npy_append_array import NpyAppendArray
 
 from hammer import PPO 
@@ -43,7 +43,7 @@ def run(args):
         agent_action_space = env.action_spaces[env.agents[0]] 
     
     elif args.envname == "mw": 
-        env = multiwalker_v6.parallel_env(n_walkers=args.nagents) 
+        env = multiwalker_v7.parallel_env(n_walkers=args.nagents) 
         env.reset()
         agents = [agent for agent in env.agents] 
         obs_dim = env.observation_spaces[env.agents[0]].shape[0]        
