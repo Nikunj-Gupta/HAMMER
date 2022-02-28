@@ -1,4 +1,6 @@
-# HAMMER_on_SMARTS
+# HAMMER_on_SMARTS 
+
+HAMMER: an MARL algorithm: Paper: https://ala2021.vub.ac.be/papers/ALA2021_paper_35.pdf 
 
 ## Usage
 
