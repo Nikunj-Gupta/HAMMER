@@ -5,7 +5,7 @@ from itertools import count
 from tensorboardX import SummaryWriter
 from pathlib import Path 
 from pettingzoo.mpe import simple_spread_v2 
-from pettingzoo.sisl import multiwalker_v7
+from pettingzoo.sisl import multiwalker_v9
 from npy_append_array import NpyAppendArray
 
 from hammer import PPO 
@@ -28,14 +28,16 @@ def run(args):
     if args.heterogeneity: 
         print("Using Heterogeneous Local Agents") 
 
+    random_seed = args.randomseed 
+
     if args.envname == "cn": 
         env = simple_spread_v2.parallel_env(N=args.nagents, local_ratio=0.5, max_cycles=args.maxcycles) 
-        env.reset()
+        env.reset(seed=random_seed)
         agents = [agent for agent in env.agents] 
         if args.heterogeneity: 
-            obs_dim = len(preprocess_one_obs(env.reset(), limit=args.limit)["agent_0"]) 
+            obs_dim = len(preprocess_one_obs(env.reset(seed=random_seed), limit=args.limit)["agent_0"]) 
         elif args.partialobs:
-            obs_dim = len(preprocess_obs(env.reset(), limit=args.limit)["agent_0"]) 
+            obs_dim = len(preprocess_obs(env.reset(seed=random_seed), limit=args.limit)["agent_0"]) 
         else:
             obs_dim = env.observation_spaces[env.agents[0]].shape[0]
 
@@ -43,8 +45,22 @@ def run(args):
         agent_action_space = env.action_spaces[env.agents[0]] 
     
     elif args.envname == "mw": 
-        env = multiwalker_v7.parallel_env(n_walkers=args.nagents) 
-        env.reset()
+        # env = multiwalker_v9.parallel_env(n_walkers=args.nagents)
+        env = multiwalker_v9.parallel_env(
+            n_walkers=args.nagents, 
+            position_noise=1e-3, 
+            angle_noise=1e-3, 
+            forward_reward=1.0, 
+            terminate_reward=-100.0, 
+            fall_reward=-10.0, 
+            shared_reward=True, 
+            terminate_on_fall=True, 
+            remove_on_fall=True, 
+            terrain_length=200, 
+            max_cycles=500
+        ) 
+
+        env.reset(seed=random_seed)
         agents = [agent for agent in env.agents] 
         obs_dim = env.observation_spaces[env.agents[0]].shape[0]        
         action_dim = env.action_spaces[env.agents[0]].shape[0] 
@@ -56,10 +72,10 @@ def run(args):
         print("config required")
         return
     
-    random_seed = args.randomseed 
     if random_seed:
         print("Random Seed: {}".format(random_seed))
-        env.seed(random_seed) 
+        # env.seed(random_seed) 
+        # env.reset(seed=random_seed) 
         torch.manual_seed(random_seed)
         np.random.seed(random_seed)
 
@@ -119,11 +135,11 @@ def run(args):
     # logging variables
 
     if args.heterogeneity: 
-        obs = preprocess_one_obs(env.reset(), limit=args.limit) 
+        obs = preprocess_one_obs(env.reset(seed=random_seed), limit=args.limit) 
     elif args.partialobs: 
-        obs = preprocess_obs(env.reset(), limit=args.limit)
+        obs = preprocess_obs(env.reset(seed=random_seed), limit=args.limit)
     else:  
-        obs = env.reset() 
+        obs = env.reset(seed=random_seed) 
 
     i_episode = 1 
     episode_rewards = 0 
@@ -197,12 +213,12 @@ def run(args):
                     HAMMER.save(save_dir) 
 
             if args.heterogeneity: 
-                obs = preprocess_one_obs(env.reset(), limit=args.limit) 
+                obs = preprocess_one_obs(env.reset(seed=random_seed), limit=args.limit) 
             elif args.partialobs: 
-                obs = preprocess_obs(env.reset(), limit=args.limit)
+                obs = preprocess_obs(env.reset(seed=random_seed), limit=args.limit)
             else: 
-                obs = env.reset() 
-            print('Episode {} \t  Episodic reward per agent: {}'.format(i_episode, episode_rewards)) 
+                obs = env.reset(seed=random_seed) 
+            print('Episode {} \t  Episodic reward per agent: {:.3f}'.format(i_episode, episode_rewards)) 
             episode_rewards = 0 
             i_episode += 1 
 
@@ -225,9 +241,9 @@ if __name__ == '__main__':
 
     parser.add_argument("--maxepisodes", type=int, default=500_000) 
     parser.add_argument("--maxcycles", type=int, default=25) 
-    parser.add_argument("--partialobs", type=int) 
-    parser.add_argument("--heterogeneity", type=int) 
-    parser.add_argument("--limit", type=int) # 10 for cn
+    parser.add_argument("--partialobs", type=int, default=0) 
+    parser.add_argument("--heterogeneity", type=int, default=0) 
+    parser.add_argument("--limit", type=int, default=10) # 10 for cn
 
     parser.add_argument("--dru_toggle", type=int) # 0 for HAMMERv2 and 1 for HAMMERv3 
 
