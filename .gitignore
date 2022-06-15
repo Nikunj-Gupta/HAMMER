@@ -4,7 +4,6 @@ makefile
 .vscode/ 
 test/ 
 plots/ 
-runs/ 
 saves/ 
 *.sh
 analysis-by-rendering/
