@@ -8,10 +8,8 @@ if not os.path.isdir(dumpdir):
 fixed_text = "#!/bin/bash\n"\
              "#SBATCH --nodes=1\n"\
              "#SBATCH --cpus-per-task=16 \n"\
-             "#SBATCH --time=10:00:00\n"\
-             "#SBATCH --mem=40GB\n"\
-             "#SBATCH --gres=gpu:1\n"
-
+             "#SBATCH --time=48:00:00\n"\
+             "#SBATCH --mem=40GB\n"
 
 config_file = "configs/mw.yaml"
 
@@ -21,6 +19,8 @@ with open(config_file, "r") as stream:
 
 
 
+# for dru_toggle in [0, 1]: 
+#     for meslen in [1,2,3]: 
 for dru_toggle in [0]: 
     for meslen in [0]: 
         for randomseed in [14712, 10453, 92959, 61033, 90300]: 

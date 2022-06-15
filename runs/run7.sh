@@ -1,9 +1,8 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=16 
-#SBATCH --time=10:00:00
+#SBATCH --time=48:00:00
 #SBATCH --mem=40GB
-#SBATCH --gres=gpu:1
 #SBATCH --job-name=10453
 #SBATCH --output=10453.out
 
