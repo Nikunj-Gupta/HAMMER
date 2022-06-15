@@ -21,8 +21,8 @@ with open(config_file, "r") as stream:
 
 
 
-for dru_toggle in [0, 1]: 
-    for meslen in [0, 1, 2, 3]: 
+for dru_toggle in [0]: 
+    for meslen in [0]: 
         for randomseed in [14712, 10453, 92959, 61033, 90300]: 
             exp = str(randomseed) 
             command = fixed_text + "#SBATCH --job-name="+exp+"\n#SBATCH --output="+exp+".out\n"

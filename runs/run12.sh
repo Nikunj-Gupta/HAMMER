@@ -11,4 +11,4 @@ source ../venvs/hammer/bin/activate
 
 module load python/intel/3.8.6
 module load openmpi/intel/4.0.5
-time python3 hammer-run.py  --envname mw --config configs/mw.yaml --nagents 3 --dru_toggle 0 --meslen 2 --randomseed 10453
+time python3 hammer-run.py  --envname mw --config configs/mw.yaml --nagents 3 --dru_toggle 0 --meslen 3 --randomseed 10453
