@@ -5,6 +5,5 @@ makefile
 test/ 
 plots/ 
 saves/ 
-*.sh
 analysis-by-rendering/
 VENV/
