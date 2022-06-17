@@ -2,7 +2,7 @@ import os, yaml
 from pathlib import Path 
 from itertools import count 
 
-dumpdir = "runs/" 
+dumpdir = "runs3/" 
 if not os.path.isdir(dumpdir):
     os.mkdir(dumpdir)
 fixed_text = "#!/bin/bash\n"\
@@ -23,7 +23,7 @@ with open(config_file, "r") as stream:
 #     for meslen in [1,2,3]: 
 for dru_toggle in [0]: 
     for meslen in [0]: 
-        for randomseed in [9538, 4293, 5327, 8651, 4973]: 
+        for randomseed in [106, 186, 310, 530, 606]: 
             exp = str(randomseed) 
             command = fixed_text + "#SBATCH --job-name="+exp+"\n#SBATCH --output="+exp+".out\n"
             command += "\nsource ../venvs/hammer/bin/activate\n"\
