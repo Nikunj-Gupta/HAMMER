@@ -122,7 +122,7 @@ def run(args):
         critic_layer=config["critic_layer"], 
         dru_toggle=args.dru_toggle, 
         is_discrete=config["is_discrete"], 
-        sharedparams=0
+        sharedparams=args.sharedparams
     ) 
     if args.eval: 
         HAMMER.load(args.eval_path)
@@ -237,9 +237,9 @@ if __name__ == '__main__':
     parser.add_argument("--eval", type=int) 
     parser.add_argument("--eval_path", type=str) 
 
-    parser.add_argument("--sharedparams", type=int, default=1) 
+    parser.add_argument("--sharedparams", type=int, default=0) 
 
-    parser.add_argument("--maxepisodes", type=int, default=500_000) 
+    parser.add_argument("--maxepisodes", type=int, default=30_000) 
     parser.add_argument("--maxcycles", type=int, default=25) 
     parser.add_argument("--partialobs", type=int, default=0) 
     parser.add_argument("--heterogeneity", type=int, default=0) 
