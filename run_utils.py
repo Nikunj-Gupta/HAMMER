@@ -8,7 +8,7 @@ if not os.path.isdir(dumpdir):
 fixed_text = "#!/bin/bash\n"\
              "#SBATCH --nodes=1\n"\
              "#SBATCH --cpus-per-task=16 \n"\
-             "#SBATCH --time=4:00:00\n"\
+             "#SBATCH --time=10:00:00\n"\
              "#SBATCH --mem=40GB\n"
 
 config_file = "configs/cn.yaml"
@@ -36,8 +36,8 @@ for n_agents in [3, 5, 7, 10]:
                     '--nagents', str(n_agents),  
                     '--dru_toggle', str(dru_toggle), 
                     '--meslen', str(meslen), 
-                    '--partialobs 1', 
-                    '--heterogeneity 0', 
+                    '--partialobs 0', 
+                    '--heterogeneity 1', 
                     '--randomseed', str(randomseed), 
                     ]) 
                 # print(command) 
