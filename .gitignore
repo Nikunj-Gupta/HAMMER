@@ -6,4 +6,4 @@ test/
 plots/ 
 saves/ 
 analysis-by-rendering/
-VENV/
+venv*/
