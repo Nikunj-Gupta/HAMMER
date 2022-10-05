@@ -2,7 +2,7 @@ import os, yaml
 from pathlib import Path 
 from itertools import count 
 
-dumpdir = "runs_new_cn/" 
+dumpdir = "runs_new_cn_modified/" 
 if not os.path.isdir(dumpdir):
     os.mkdir(dumpdir)
 fixed_text = "#!/bin/bash\n"\
@@ -36,6 +36,8 @@ for n_agents in [3, 5, 7, 10]:
                     '--nagents', str(n_agents),  
                     '--dru_toggle', str(dru_toggle), 
                     '--meslen', str(meslen), 
+                    '--partialobs 1', 
+                    '--heterogeneity 0', 
                     '--randomseed', str(randomseed), 
                     ]) 
                 # print(command) 
