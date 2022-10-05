@@ -151,7 +151,7 @@ def run(args):
         
         if args.envname == "mw": 
             actions = {agent : np.clip(actions[agent], agent_action_space.low, agent_action_space.high) for agent in agents}     
-        next_obs, rewards, is_terminals, infos = env.step(actions) 
+        next_obs, rewards, _, is_terminals, infos = env.step(actions) 
 
         HAMMER.memory_record(rewards, is_terminals)
         episode_rewards += np.mean(np.array(list(rewards.values()))) 
