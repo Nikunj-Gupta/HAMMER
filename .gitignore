@@ -1,5 +1,5 @@
 __pycache__/ 
-save/ 
+save_*/ 
 makefile 
 .vscode/ 
 test/ 
@@ -7,3 +7,6 @@ plots/
 saves/ 
 analysis-by-rendering/
 venv*/
+*.ipynb
+*.DS_Store*
+logs/

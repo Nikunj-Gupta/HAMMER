@@ -82,7 +82,10 @@ class ActorCritic(nn.Module):
         self.action_var = torch.full((single_action_dim,), self.action_std * self.action_std).to(device)
 
     def global_actor(self, state, eval_zeros=None): 
-        latent_vector = self.global_encoder(state)
+        latent_vector = self.global_encoder(state) 
+        # if random==1: 
+        #     message = [torch.rand(1, self.meslen) for _ in range(self.n_agents)] 
+        #     return message 
         message = []
         for decoder in self.global_actor_decoder: 
             # Obtaining message using decoder and then Passing message through DRU 
@@ -101,7 +104,7 @@ class ActorCritic(nn.Module):
     def forward(self):
         raise NotImplementedError
 
-    def act(self, obs, memory, global_memory, eval_zeros=None): 
+    def act(self, obs, memory, global_memory, eval_zeros=None, random=None): 
         global_agent_state = [obs[i] for i in obs]
         global_agent_state = torch.FloatTensor(global_agent_state).to(device).reshape(1, -1)
         
@@ -297,6 +300,10 @@ class PPO:
             
             old_global_state = torch.stack(self.global_memory.states) # 800x1x54
             old_global_state = old_global_state.reshape(-1, self.single_state_dim*self.n_agents) # 800x54
+            # old_global_messages = self.global_memory.messages 
+            # # old_global_messages = np.transpose(old_global_messages, axes=(1, 0, 2)) 
+            # print(np.array(old_global_messages)) 
+            # print(np.array(old_global_messages).shape) 
             
             for i in range(self.n_agents):
                 ################## CAVEAT: This is redundant, slows the process!#############

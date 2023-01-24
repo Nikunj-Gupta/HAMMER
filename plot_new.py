@@ -1,5 +1,4 @@
-import os, glob, yaml, pprint, numpy as np, pandas as pd
-from webbrowser import get 
+import os, glob, numpy as np, pandas as pd
 from collections import defaultdict 
 import matplotlib.pyplot as plt 
 from tensorboard.backend.event_processing import event_accumulator
@@ -45,6 +44,7 @@ def get_values(filename, scalar="Episodic_Reward"):
 def smooth(y, box_pts):
     box = np.ones(box_pts)/box_pts
     y_smooth = np.convolve(y, box, mode='same')
+    # return np.array(pd.Series(y).rolling(box_pts).mean()) 
     return y_smooth
 
 
@@ -103,7 +103,7 @@ def preprocess(log_dir):
     colors = ['#006BB2', '#B22400', '#006BB2', '#B22400', '#006BB2', '#B22400'] 
     labels = ['HAMMER', 'IL','HAMMER', 'IL','HAMMER', 'IL','HAMMER', 'IL'] 
     for exp in merged: 
-        if ('n_3' in exp) and (('meslen_2' in exp) or ('meslen_0' in exp)): 
+        if ('n_3' in exp) and not ('dru_1' in exp and 'meslen_0' in exp): 
         # if ('n_3' in exp) and ('dru_0' in exp): 
             print("================================\n"+exp+"\n================================\n")
             vals = [] 
@@ -117,8 +117,10 @@ def preprocess(log_dir):
                     print(i)
                     logs = glob.glob(os.path.join('./save', i, "logs/*.npy"), recursive=True)[0]                     
                     arr = np.load(logs) 
-                    vals.append(smooth(arr[:CUT], box_pts=SMOOTH)[SMOOTH:CUT-SMOOTH]) 
+                    vals.append(arr[:CUT])                     
+                    # vals.append(smooth(arr[:CUT], box_pts=SMOOTH)[SMOOTH:CUT-SMOOTH]) 
                     # break 
+            print(np.array(vals).shape)
             val_means = np.array(vals).mean(axis=0)
             val_stds = np.array(vals).std(axis=0)
             plt.plot(val_means, label=exp)
@@ -146,5 +148,5 @@ def preprocess(log_dir):
 
 
 if __name__ == '__main__': 
-    # save_numpy('./save') 
-    preprocess('./save')
+    save_numpy('./save') 
+    # preprocess('./save')

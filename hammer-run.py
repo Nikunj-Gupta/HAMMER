@@ -239,13 +239,14 @@ if __name__ == '__main__':
 
     parser.add_argument("--sharedparams", type=int, default=0) 
 
-    parser.add_argument("--maxepisodes", type=int, default=30_000) 
+    parser.add_argument("--maxepisodes", type=int, default=500_000) 
     parser.add_argument("--maxcycles", type=int, default=25) 
     parser.add_argument("--partialobs", type=int, default=0) 
     parser.add_argument("--heterogeneity", type=int, default=0) 
     parser.add_argument("--limit", type=int, default=10) # 10 for cn
 
     parser.add_argument("--dru_toggle", type=int) # 0 for HAMMERv2 and 1 for HAMMERv3 
+    # parser.add_argument("--random_mes", type=int, help="0 for hammer messages and 1 for random messages", default=0) 
 
     parser.add_argument("--meslen", type=int, help="message length", default=1)
     parser.add_argument("--randomseed", type=int)

@@ -2,7 +2,7 @@ import os, yaml
 from pathlib import Path 
 from itertools import count 
 
-dumpdir = "runs_new_cn_modified/" 
+dumpdir = "runs_new_cn_jan24/" 
 if not os.path.isdir(dumpdir):
     os.mkdir(dumpdir)
 fixed_text = "#!/bin/bash\n"\
@@ -21,8 +21,10 @@ with open(config_file, "r") as stream:
 
 for n_agents in [3, 5, 7, 10]: 
     for dru_toggle in [0, 1]: 
-        for meslen in [0, 1, 2]: 
+        for meslen in [0, 1]: 
             for randomseed in [ 2528, 66962, 34046, 58876, 84054, 34131, 33989, 59004, 94644, 98216 ]: 
+                if (dru_toggle==1) and (meslen==0): 
+                    continue 
                 exp = str(randomseed) 
                 command = fixed_text + "#SBATCH --job-name="+exp+"\n#SBATCH --output="+exp+".out\n"
                 command += "\nsource ../venvs/hammer/bin/activate\n"\
@@ -37,7 +39,7 @@ for n_agents in [3, 5, 7, 10]:
                     '--dru_toggle', str(dru_toggle), 
                     '--meslen', str(meslen), 
                     '--partialobs 0', 
-                    '--heterogeneity 1', 
+                    '--heterogeneity 0', 
                     '--randomseed', str(randomseed), 
                     ]) 
                 # print(command) 
