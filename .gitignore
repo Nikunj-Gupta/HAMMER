@@ -1,5 +1,5 @@
 __pycache__/ 
-save_*/ 
+save*/ 
 makefile 
 .vscode/ 
 test/ 
