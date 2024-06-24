@@ -100,3 +100,15 @@ For example, to open a sceanario consisting of 4 lanes:
 
 3. simualation and visualization:
 >  supervisord
+
+## Cite 
+```
+@article{gupta2023hammer,
+  title={Hammer: Multi-level coordination of reinforcement learning agents via learned messaging},
+  author={Gupta, Nikunj and Srinivasaraghavan, G and Mohalik, Swarup and Kumar, Nishant and Taylor, Matthew E},
+  journal={Neural Computing and Applications},
+  pages={1--16},
+  year={2023},
+  publisher={Springer}
+}
+``` 
